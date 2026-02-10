@@ -1,0 +1,150 @@
+{
+  "name": "autogit-llm",
+  "displayName": "AutoGit LLM",
+  "description": "Generate git commit messages from repository changes with configurable AI providers.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Source Control",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:autogitllm.generateCommitMessage"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "autogitllm.generateCommitMessage",
+        "title": "AI: Generate Commit Message",
+        "category": "AutoGit LLM"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "autogitllm.generateCommitMessage",
+          "when": "scmProvider == git",
+          "group": "navigation@90"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AutoGit LLM",
+      "properties": {
+        "autogitllm.provider": {
+          "type": "string",
+          "default": "openai",
+          "enum": [
+            "openai",
+            "deepseek",
+            "gemini",
+            "kimi",
+            "glm",
+            "custom"
+          ],
+          "description": "AI provider. 'custom' uses OpenAI-compatible APIs."
+        },
+        "autogitllm.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model name. If empty, a provider-specific default model is used."
+        },
+        "autogitllm.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "API key for the selected provider. You can also use provider env vars (OPENAI_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, MOONSHOT_API_KEY, ZHIPU_API_KEY) or AUTOGITLLM_API_KEY."
+        },
+        "autogitllm.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Optional custom base URL (supports third-party gateways/proxies)."
+        },
+        "autogitllm.customRequestPath": {
+          "type": "string",
+          "default": "/chat/completions",
+          "description": "Request path for custom/OpenAI-compatible providers."
+        },
+        "autogitllm.extraHeaders": {
+          "type": "string",
+          "default": "{}",
+          "description": "Optional JSON object of extra HTTP headers, e.g. {\"X-Api-Key\":\"...\"}."
+        },
+        "autogitllm.temperature": {
+          "type": "number",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature for generation."
+        },
+        "autogitllm.maxTokens": {
+          "type": "number",
+          "default": 120,
+          "minimum": 16,
+          "maximum": 2048,
+          "description": "Maximum output tokens."
+        },
+        "autogitllm.requestTimeoutMs": {
+          "type": "number",
+          "default": 25000,
+          "minimum": 3000,
+          "maximum": 120000,
+          "description": "HTTP request timeout in milliseconds."
+        },
+        "autogitllm.commandTimeoutMs": {
+          "type": "number",
+          "default": 12000,
+          "minimum": 3000,
+          "maximum": 120000,
+          "description": "Timeout in milliseconds for git commands."
+        },
+        "autogitllm.includeOnlyStaged": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, only staged changes are included."
+        },
+        "autogitllm.maxDiffBytes": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 4096,
+          "maximum": 2097152,
+          "description": "Max UTF-8 bytes from diff to send to the model."
+        },
+        "autogitllm.systemPrompt": {
+          "type": "string",
+          "default": "You are an expert software engineer who writes concise and high-quality git commit messages.",
+          "description": "System prompt to control generation style."
+        },
+        "autogitllm.ruleTemplate": {
+          "type": "string",
+          "default": "Generate exactly one git commit message line using Conventional Commits format: <type>(optional-scope): <subject>. Keep it <= 72 characters, imperative mood, no trailing period, and output only the message.",
+          "description": "Main rule template for commit generation."
+        },
+        "autogitllm.additionalRules": {
+          "type": "string",
+          "default": "",
+          "description": "Optional extra instructions appended to the rule template."
+        },
+        "autogitllm.copyToClipboard": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also copy generated commit message to clipboard."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "tsc -noEmit -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.57",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.6.3"
+  }
+}
