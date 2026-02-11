@@ -71,6 +71,7 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
         【输出要求】
         - 只输出最终 commit message
         - 不要解释
+        - 长度不超过72个字
     `
   },
   en: {
@@ -116,6 +117,7 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
         [Output Rules]
         - Output ONLY the final commit message
         - Do NOT add explanations or commentary
+        - Length must not exceed 72 characters
 
     `
   }

@@ -53,7 +53,11 @@
             "zh",
             "en"
           ],
-          "description": "UI language and commit-message language."
+          "enumDescriptions": [
+            "中文",
+            "English"
+          ],
+          "markdownDescription": "界面语言与提交信息语言。/ UI language and commit-message language."
         },
         "autogitllm.provider": {
           "type": "string",
