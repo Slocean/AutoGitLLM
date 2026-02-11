@@ -16,6 +16,7 @@
     "onCommand:autogitllm.openSetup"
   ],
   "main": "./dist/extension.js",
+  "icon": "src/img/icon.png",
   "contributes": {
     "commands": [
       {
@@ -32,14 +33,10 @@
     "menus": {
       "scm/title": [
         {
-          "command": "autogitllm.openSetup",
-          "when": "scmProvider == git",
-          "group": "navigation@89"
-        },
-        {
           "command": "autogitllm.generateCommitMessage",
           "when": "scmProvider == git",
-          "group": "navigation@90"
+          "group": "navigation@90",
+          "icon": "src/img/btn.png"
         }
       ]
     },

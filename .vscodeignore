@@ -1,4 +1,5 @@
 .vscode/**
 .vscode-test/**
 src/**
+!src/img/**
 tsconfig.json
