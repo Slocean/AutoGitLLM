@@ -31,15 +31,15 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
   zh: {
     system: `你是一个资深软件工程师，擅长编写高质量 Git Commit Message。`,
     rule: `
-        请根据「代码改动描述」生成规范提交信息，仅输出一行，要求：
+        请根据「代码改动描述」生成规范提交信息，要求：
 
         【格式】
-        <type>(可选scope): <subject> <emoji>
+        <type>(可选scope):<emoji> <subject> 
 
         【规则】
         - 使用 Conventional Commits 规范
         - subject 必须存在且有意义
-        - emoji 只放在 subject 末尾且与 type 语义一致
+        - emoji 只放在 subject 开头且与 type 语义一致
         - 语言：简体中文
         - 不要输出多余解释
         - 总长度不超过72字符
