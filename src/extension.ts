@@ -112,6 +112,7 @@ function getSetupIssue(config: ExtensionConfig): SetupIssue | undefined {
       message: t(config.language, 'setupMissingBaseUrl', { provider }),
       actions: [
         { kind: 'setup', label: t(config.language, 'actionOpenSetup') },
+        { kind: 'setting', label: t(config.language, 'actionOpenSettings'), setting: 'gitgathom' },
         { kind: 'setting', label: t(config.language, 'actionConfigureBaseUrl'), setting: 'gitgathom.baseUrl' },
         { kind: 'setting', label: t(config.language, 'actionConfigureProvider'), setting: 'gitgathom.provider' }
       ]
@@ -130,6 +131,7 @@ function getSetupIssue(config: ExtensionConfig): SetupIssue | undefined {
       message: t(config.language, 'setupMissingCredential', { provider }),
       actions: [
         { kind: 'setup', label: t(config.language, 'actionOpenSetup') },
+        { kind: 'setting', label: t(config.language, 'actionOpenSettings'), setting: 'gitgathom' },
         { kind: 'setting', label: t(config.language, 'actionConfigureApiKey'), setting: 'gitgathom.apiKey' },
         { kind: 'setting', label: t(config.language, 'actionConfigureHeaders'), setting: 'gitgathom.extraHeaders' }
       ]
