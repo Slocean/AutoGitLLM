@@ -1,5 +1,5 @@
 {
-  "name": "GitFathom",
+  "name": "gitgathom",
   "displayName": "GitFathom",
   "description": "Generate git commit messages from repository changes with configurable AI providers.",
   "version": "0.0.1",
@@ -12,15 +12,15 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:autogitllm.generateCommitMessage",
-    "onCommand:autogitllm.openSetup"
+    "onCommand:gitgathom.generateCommitMessage",
+    "onCommand:gitgathom.openSetup"
   ],
   "main": "./dist/extension.js",
   "icon": "src/img/icon.png",
   "contributes": {
     "commands": [
       {
-        "command": "autogitllm.generateCommitMessage",
+        "command": "gitgathom.generateCommitMessage",
         "title": "AI 生成提交信息 / Generate Commit Message",
         "category": "GitFathom",
         "icon": {
@@ -29,7 +29,7 @@
         }
       },
       {
-        "command": "autogitllm.openSetup",
+        "command": "gitgathom.openSetup",
         "title": "打开配置向导 / Open Setup Wizard",
         "category": "GitFathom"
       }
@@ -37,7 +37,7 @@
     "menus": {
       "scm/title": [
         {
-          "command": "autogitllm.generateCommitMessage",
+          "command": "gitgathom.generateCommitMessage",
           "when": "scmProvider == git",
           "group": "navigation@90",
           "icon": {
@@ -50,7 +50,7 @@
     "configuration": {
       "title": "GitFathom",
       "properties": {
-        "autogitllm.language": {
+        "gitgathom.language": {
           "type": "string",
           "title": "语言",
           "default": "zh",
@@ -68,7 +68,7 @@
           ],
           "markdownDescription": "界面语言与提交信息语言。"
         },
-        "autogitllm.provider": {
+        "gitgathom.provider": {
           "type": "string",
           "title": "AI 厂商",
           "default": "openai",
@@ -90,37 +90,37 @@
           ],
           "markdownDescription": "AI 厂商选择（custom 使用 OpenAI 兼容接口）。"
         },
-        "autogitllm.model": {
+        "gitgathom.model": {
           "type": "string",
           "default": "",
           "title": "模型名",
           "markdownDescription": "模型名称，留空则使用厂商默认模型。"
         },
-        "autogitllm.apiKey": {
+        "gitgathom.apiKey": {
           "type": "string",
           "default": "",
           "title": "API Key",
-          "markdownDescription": "厂商 API Key，也可使用环境变量（OPENAI_API_KEY、DEEPSEEK_API_KEY、GEMINI_API_KEY、MOONSHOT_API_KEY、ZHIPU_API_KEY、AUTOGITLLM_API_KEY）。"
+          "markdownDescription": "厂商 API Key，也可使用环境变量（OPENAI_API_KEY、DEEPSEEK_API_KEY、GEMINI_API_KEY、MOONSHOT_API_KEY、ZHIPU_API_KEY、GITFATHOM_API_KEY）。"
         },
-        "autogitllm.baseUrl": {
+        "gitgathom.baseUrl": {
           "type": "string",
           "default": "",
           "title": "Base URL",
           "markdownDescription": "自定义 Base URL（支持第三方网关或代理）。"
         },
-        "autogitllm.customRequestPath": {
+        "gitgathom.customRequestPath": {
           "type": "string",
           "default": "/chat/completions",
           "title": "请求路径",
           "markdownDescription": "自定义/OpenAI 兼容厂商的请求路径。"
         },
-        "autogitllm.extraHeaders": {
+        "gitgathom.extraHeaders": {
           "type": "string",
           "default": "{}",
           "title": "额外请求头",
           "markdownDescription": "额外 HTTP 请求头的 JSON，例如 {\"X-Api-Key\":\"...\"}。"
         },
-        "autogitllm.temperature": {
+        "gitgathom.temperature": {
           "type": "number",
           "default": 0.2,
           "minimum": 0,
@@ -128,7 +128,7 @@
           "title": "温度",
           "markdownDescription": "生成采样温度。"
         },
-        "autogitllm.maxTokens": {
+        "gitgathom.maxTokens": {
           "type": "number",
           "default": 120,
           "minimum": 16,
@@ -136,7 +136,7 @@
           "title": "最大输出 Token",
           "markdownDescription": "输出的最大 Token 数。"
         },
-        "autogitllm.requestTimeoutMs": {
+        "gitgathom.requestTimeoutMs": {
           "type": "number",
           "default": 25000,
           "minimum": 3000,
@@ -144,7 +144,7 @@
           "title": "请求超时（毫秒）",
           "markdownDescription": "HTTP 请求超时（毫秒）。"
         },
-        "autogitllm.commandTimeoutMs": {
+        "gitgathom.commandTimeoutMs": {
           "type": "number",
           "default": 12000,
           "minimum": 3000,
@@ -152,13 +152,13 @@
           "title": "命令超时（毫秒）",
           "markdownDescription": "Git 命令超时（毫秒）。"
         },
-        "autogitllm.includeOnlyStaged": {
+        "gitgathom.includeOnlyStaged": {
           "type": "boolean",
           "default": false,
           "title": "仅包含暂存区",
           "markdownDescription": "开启后仅包含暂存区变更。"
         },
-        "autogitllm.maxDiffBytes": {
+        "gitgathom.maxDiffBytes": {
           "type": "number",
           "default": 120000,
           "minimum": 4096,
@@ -166,25 +166,25 @@
           "title": "Diff 最大字节数",
           "markdownDescription": "发送给模型的 diff UTF-8 最大字节数。"
         },
-        "autogitllm.systemPrompt": {
+        "gitgathom.systemPrompt": {
           "type": "string",
           "default": "",
           "title": "系统提示词",
           "markdownDescription": "控制生成风格的系统提示词，留空则使用内置默认值。"
         },
-        "autogitllm.ruleTemplate": {
+        "gitgathom.ruleTemplate": {
           "type": "string",
           "default": "",
           "title": "规则模板",
           "markdownDescription": "提交信息生成的主规则模板，留空则使用内置默认值。"
         },
-        "autogitllm.additionalRules": {
+        "gitgathom.additionalRules": {
           "type": "string",
           "default": "",
           "title": "附加规则",
           "markdownDescription": "附加到规则模板后的额外指令。"
         },
-        "autogitllm.copyToClipboard": {
+        "gitgathom.copyToClipboard": {
           "type": "boolean",
           "default": false,
           "title": "复制到剪贴板",

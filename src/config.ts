@@ -24,7 +24,7 @@ const PROVIDER_ENV_KEYS: Record<Provider, string> = {
   gemini: 'GEMINI_API_KEY',
   kimi: 'MOONSHOT_API_KEY',
   glm: 'ZHIPU_API_KEY',
-  custom: 'AUTOGITLLM_API_KEY'
+  custom: 'GITFATHOM_API_KEY'
 };
 
 const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
@@ -89,7 +89,7 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
 };
 
 export function readConfig(): ExtensionConfig {
-  const cfg = vscode.workspace.getConfiguration('autogitllm');
+  const cfg = vscode.workspace.getConfiguration('gitgathom');
   const provider = getConfigValue<Provider>(cfg, 'provider', 'openai');
   const language = normalizeLanguage(getConfigValue<string>(cfg, 'language', 'zh'));
   const rawModel = getConfigValue<string>(cfg, 'model', '').trim();
@@ -165,7 +165,7 @@ function resolveApiKey(provider: Provider, configuredKey: string): string {
     return providerKey;
   }
 
-  return process.env.AUTOGITLLM_API_KEY?.trim() ?? '';
+  return process.env.GITFATHOM_API_KEY?.trim() ?? '';
 }
 
 function parseHeaders(raw: string): Record<string, string> {

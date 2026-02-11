@@ -17,24 +17,24 @@ export async function generateCommitText(prompt: PromptPayload, config: Extensio
 
 function ensureConfig(config: ExtensionConfig): void {
   if (!config.model) {
-    throw new Error('Model is empty. Configure autogitllm.model.');
+    throw new Error('Model is empty. Configure gitgathom.model.');
   }
 
   const hasAuthHeader =
     hasHeader(config.extraHeaders, 'authorization') || hasHeader(config.extraHeaders, 'x-api-key');
 
   if (config.provider === 'gemini' && !config.apiKey) {
-    throw new Error('Gemini requires API key. Configure autogitllm.apiKey or GEMINI_API_KEY.');
+    throw new Error('Gemini requires API key. Configure gitgathom.apiKey or GEMINI_API_KEY.');
   }
 
   if (config.provider !== 'gemini' && !config.apiKey && !hasAuthHeader) {
     throw new Error(
-      'No API credential found. Configure autogitllm.apiKey or provide Authorization/X-Api-Key in autogitllm.extraHeaders.'
+      'No API credential found. Configure gitgathom.apiKey or provide Authorization/X-Api-Key in gitgathom.extraHeaders.'
     );
   }
 
   if (config.provider === 'custom' && !resolveBaseUrl(config)) {
-    throw new Error('Custom provider requires autogitllm.baseUrl.');
+    throw new Error('Custom provider requires gitgathom.baseUrl.');
   }
 }
 
