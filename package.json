@@ -2,8 +2,8 @@
   "name": "gitgathom",
   "displayName": "GitFathom",
   "description": "Generate git commit messages from repository changes with configurable AI providers.",
-  "version": "0.0.1",
-  "publisher": "local",
+  "version": "0.2.1",
+  "publisher": "slocean",
   "engines": {
     "vscode": "^1.90.0"
   },
