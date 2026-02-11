@@ -31,28 +31,20 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
   zh: {
     system: `你是一个资深软件工程师，擅长编写高质量 Git Commit Message。`,
     rule: `
-        请根据我提供的「代码改动描述」生成规范的提交信息，要求：
+        请根据「代码改动描述」生成规范提交信息，仅输出一行，要求：
 
-        【整体规范】
+        【格式】
+        <type>(可选scope): <subject> <emoji>
+
+        【规则】
         - 使用 Conventional Commits 规范
-        - 必须包含 emoji
+        - subject 必须存在且有意义
+        - emoji 只放在 subject 末尾且与 type 语义一致
         - 语言：简体中文
-        - 风格：专业、清晰、简洁
-        - 不要出现多余解释
+        - 不要输出多余解释
+        - 总长度不超过72字符
 
-        【格式要求】
-        <type>(<scope>): <subject> <emoji>
-
-        <body>
-        - 使用条目列出关键改动
-        - 每条一句话，精炼描述技术点
-        - 若无详细内容可省略 body
-
-        <footer>
-        - 若存在 BREAKING CHANGE 必须说明
-        - 若有关联 issue，使用 Closes #xxx
-
-        【type 类型参考】
+        【type 参考】
         - feat ✨ 新功能
         - fix 🐛 修复 bug
         - refactor ♻️ 重构
@@ -63,40 +55,23 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
         - chore 🔧 构建/工具
         - ci 👷 CI/CD
         - revert ⏪ 回滚
-
-        【emoji 规则】
-        - emoji 必须与 type 语义一致
-        - 只在 subject 末尾放 1 个 emoji
-
-        【输出要求】
-        - 只输出最终 commit message
-        - 不要解释
-        - 长度不超过72个字
     `
   },
   en: {
     system: `You are a senior software engineer skilled at writing high-quality Git commit messages.`,
     rule: `
-        Based on the provided "code change description", generate a well-structured commit message with the following requirements:
-
-        [General Rules]
-        - Follow the Conventional Commits specification
-        - Must include an emoji
-        - Language: English
-        - Tone: professional, clear, and concise
-        - Do NOT include any extra explanations
+        Based on the "code change description", output exactly one commit line:
 
         [Format]
-        <type>(<scope>): <subject> <emoji>
+        <type>(optional-scope): <subject> <emoji>
 
-        <body>
-        - Use bullet points to list key changes
-        - Each bullet must be one concise technical sentence
-        - Omit the body if no extra details are needed
-
-        <footer>
-        - Include BREAKING CHANGE if applicable
-        - Reference related issues using: Closes #xxx
+        [Rules]
+        - Follow Conventional Commits
+        - Subject must be non-empty and meaningful
+        - Emoji only at the end of subject and must match the type
+        - Language: English
+        - No extra explanations
+        - Max length: 72 characters
 
         [Allowed Types]
         - feat ✨ New feature
@@ -109,16 +84,6 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
         - chore 🔧 Build/tools/maintenance
         - ci 👷 CI/CD
         - revert ⏪ Revert
-
-        [Emoji Rules]
-        - Emoji must match the semantic meaning of the type
-        - Only ONE emoji at the end of the subject line
-
-        [Output Rules]
-        - Output ONLY the final commit message
-        - Do NOT add explanations or commentary
-        - Length must not exceed 72 characters
-
     `
   }
 };
