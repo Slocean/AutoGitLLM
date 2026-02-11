@@ -24,8 +24,8 @@
         "title": "AI 生成提交信息 / Generate Commit Message",
         "category": "GitFathom",
         "icon": {
-          "light": "src/img/light_btn.png",
-          "dark": "src/img/dark-btn.png"
+          "light": "src/img/dark_btn.png",
+          "dark": "src/img/light_btn.png"
         }
       },
       {
