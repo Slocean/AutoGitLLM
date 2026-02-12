@@ -2,7 +2,7 @@
   "name": "gitgathom",
   "displayName": "GitFathom",
   "description": "Generate git commit messages from repository changes with configurable AI providers.",
-  "version": "0.4.7",
+  "version": "0.5.1",
   "publisher": "slocean",
   "license": "UNLICENSED",
   "repository": {
@@ -121,9 +121,9 @@
         },
         "gitgathom.customRequestPath": {
           "type": "string",
-          "default": "/chat/completions",
+          "default": "",
           "title": "请求路径",
-          "markdownDescription": "自定义/OpenAI 兼容厂商的请求路径。"
+          "markdownDescription": "请求路径。OpenAI 默认使用 /chat/completions；其它厂商默认留空，可手动填写。"
         },
         "gitgathom.extraHeaders": {
           "type": "string",

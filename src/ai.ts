@@ -290,12 +290,17 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 
 function createOpenAiEndpoint(baseUrl: string, customPath: string): string {
   const normalizedBase = baseUrl.replace(/\/+$/, '');
+  const normalizedPath = customPath.trim();
 
   if (normalizedBase.endsWith('/chat/completions')) {
     return normalizedBase;
   }
 
-  return `${normalizedBase}${customPath.startsWith('/') ? customPath : `/${customPath}`}`;
+  if (!normalizedPath) {
+    return `${normalizedBase}/chat/completions`;
+  }
+
+  return `${normalizedBase}${normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`}`;
 }
 
 function sanitizeCommitText(raw: string): string {
@@ -304,20 +309,28 @@ function sanitizeCommitText(raw: string): string {
     throw new Error('Generated commit message is empty.');
   }
 
-  const normalizedLines: string[] = [];
-  const seen = new Set<string>();
+  const normalizedCandidates = candidates
+    .map(candidate => normalizeLocalizedType(normalizeCommitLine(candidate)))
+    .filter(candidate => candidate.length > 0);
 
-  for (const candidate of candidates) {
-    const normalized = normalizeCommitLine(candidate);
-    const localized = normalizeLocalizedType(normalized);
-    if (isValidCommitLine(localized) && !seen.has(localized)) {
-      seen.add(localized);
-      normalizedLines.push(localized);
+  const firstHeaderIndex = normalizedCandidates.findIndex(isValidCommitLine);
+  if (firstHeaderIndex >= 0) {
+    const header = normalizedCandidates[firstHeaderIndex];
+    const bodyLines: string[] = [];
+
+    for (let i = firstHeaderIndex + 1; i < normalizedCandidates.length; i += 1) {
+      const line = normalizedCandidates[i];
+      if (isValidCommitLine(line)) {
+        break;
+      }
+
+      const normalizedBody = normalizeBodyLine(line);
+      if (normalizedBody) {
+        bodyLines.push(normalizedBody);
+      }
     }
-  }
 
-  if (normalizedLines.length > 0) {
-    return normalizedLines.join('\n');
+    return bodyLines.length > 0 ? `${header}\n${bodyLines.join('\n')}` : header;
   }
 
   const fallback = buildFallbackCommitLine(candidates);
@@ -326,6 +339,14 @@ function sanitizeCommitText(raw: string): string {
   }
 
   throw new Error('Generated commit message is invalid or missing subject.');
+}
+
+function normalizeBodyLine(value: string): string {
+  return value
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+[.)]\s+/, '')
+    .replace(/^['"`]+|['"`]+$/g, '')
+    .trim();
 }
 
 function normalizeCommitLine(value: string): string {
@@ -346,7 +367,7 @@ function extractCandidates(raw: string): string[] {
     .replace(/```/g, '')
     .trim();
 
-  return cleaned
+  const lines = cleaned
     .split(/\r?\n/)
     .map(line =>
       line
@@ -356,6 +377,38 @@ function extractCandidates(raw: string): string[] {
         .trim()
     )
     .filter(line => line.length > 0);
+
+  return splitPackedCommitLines(lines);
+}
+
+function splitPackedCommitLines(lines: string[]): string[] {
+  const output: string[] = [];
+
+  for (const line of lines) {
+    const starts: number[] = [];
+    const regex = /\b[a-zA-Z]+(?:\([^)]+\))?!?\s*[:\uFF1A]\s*/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(line)) !== null) {
+      starts.push(match.index);
+    }
+
+    if (starts.length <= 1) {
+      output.push(line);
+      continue;
+    }
+
+    for (let i = 0; i < starts.length; i += 1) {
+      const start = starts[i];
+      const end = i + 1 < starts.length ? starts[i + 1] : line.length;
+      const segment = line.slice(start, end).trim();
+      if (segment) {
+        output.push(segment);
+      }
+    }
+  }
+
+  return output;
 }
 
 function normalizeLocalizedType(value: string): string {

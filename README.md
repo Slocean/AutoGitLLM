@@ -43,7 +43,7 @@
 - `gitgathom.model`
 - `gitgathom.apiKey`
 - `gitgathom.baseUrl`
-- `gitgathom.customRequestPath`
+- `gitgathom.customRequestPath`（OpenAI 默认 `/chat/completions`，其它厂商默认空）
 - `gitgathom.extraHeaders`
 - `gitgathom.ruleTemplate`
 - `gitgathom.additionalRules`
@@ -116,7 +116,7 @@ GitFathom is a VS Code extension that generates high-quality Git commit messages
 - `gitgathom.model`
 - `gitgathom.apiKey`
 - `gitgathom.baseUrl`
-- `gitgathom.customRequestPath`
+- `gitgathom.customRequestPath` (OpenAI defaults to `/chat/completions`; others default to empty)
 - `gitgathom.extraHeaders`
 - `gitgathom.ruleTemplate`
 - `gitgathom.additionalRules`

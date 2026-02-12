@@ -68,18 +68,22 @@ export async function openSetupWizard(currentLanguage: UiLanguage): Promise<bool
 
   await updateSetting('baseUrl', baseUrl.trim());
 
-  if (provider !== 'gemini') {
-    const currentPath = cfg.get<string>('customRequestPath', '/chat/completions').trim();
+  if (provider === 'openai') {
+    const currentPath = cfg.get<string>('customRequestPath', '').trim();
+    const suggestedPath = currentPath || '/chat/completions';
     const requestPath = await vscode.window.showInputBox({
       prompt: t(language, 'wizardPathPrompt'),
       placeHolder: t(language, 'wizardPathPlaceholder'),
-      value: normalizeRequestPath(currentPath)
+      value: normalizeRequestPath(suggestedPath)
     });
     if (requestPath === undefined) {
       return false;
     }
 
-    await updateSetting('customRequestPath', normalizeRequestPath(requestPath));
+    const normalizedPath = normalizeRequestPath(requestPath);
+    await updateSetting('customRequestPath', normalizedPath);
+  } else {
+    await updateSetting('customRequestPath', '');
   }
 
   const currentHeaders = cfg.get<string>('extraHeaders', '{}').trim();
@@ -173,6 +177,9 @@ async function updateSetting(key: string, value: unknown): Promise<void> {
 }
 
 function normalizeRequestPath(value: string): string {
-  const trimmed = value.trim() || '/chat/completions';
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 }

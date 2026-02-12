@@ -149,7 +149,7 @@ export function readConfig(): ExtensionConfig {
     model: rawModel || DEFAULT_MODELS[provider],
     apiKey: resolveApiKey(provider, rawApiKey),
     baseUrl: getConfigValue<string>(cfg, 'baseUrl', '').trim(),
-    customRequestPath: ensureLeadingSlash(getConfigValue<string>(cfg, 'customRequestPath', '/chat/completions')),
+    customRequestPath: resolveRequestPath(provider, getConfigValue<string>(cfg, 'customRequestPath', '').trim()),
     extraHeaders: parseHeaders(getConfigValue<string>(cfg, 'extraHeaders', '{}')),
     temperature: clamp(getConfigValue<number>(cfg, 'temperature', 0.2), 0, 2),
     maxTokens: parseOptionalMaxTokens(getConfigValue<number | null>(cfg, 'maxTokens', null)),
@@ -264,10 +264,20 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function ensureLeadingSlash(value: string): string {
-  if (!value) {
-    return '/chat/completions';
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
   }
-  return value.startsWith('/') ? value : `/${value}`;
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+function resolveRequestPath(provider: Provider, configuredPath: string): string {
+  const normalized = ensureLeadingSlash(configuredPath);
+  if (normalized) {
+    return normalized;
+  }
+
+  return provider === 'openai' ? '/chat/completions' : '';
 }
 
 function stripTrailingSlashes(value: string): string {
