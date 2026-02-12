@@ -47,6 +47,10 @@
 - `gitgathom.extraHeaders`
 - `gitgathom.ruleTemplate`
 - `gitgathom.additionalRules`
+- `gitgathom.maxChangedFiles`
+- `gitgathom.truncateDiff`
+- `gitgathom.maxDiffBytes`（仅在 `truncateDiff=true` 时生效）
+- `gitgathom.maxTokens`（可设为 `null` 表示不限制）
 - `gitgathom.copyToClipboard`
 - `gitgathom.debugView`
 
@@ -116,6 +120,10 @@ GitFathom is a VS Code extension that generates high-quality Git commit messages
 - `gitgathom.extraHeaders`
 - `gitgathom.ruleTemplate`
 - `gitgathom.additionalRules`
+- `gitgathom.maxChangedFiles`
+- `gitgathom.truncateDiff`
+- `gitgathom.maxDiffBytes` (only works when `truncateDiff=true`)
+- `gitgathom.maxTokens` (`null` means no explicit limit)
 - `gitgathom.copyToClipboard`
 
 ## Environment Variables

@@ -20,8 +20,7 @@ export interface GitRepository {
   };
 }
 
-const MAX_UNTRACKED_FILES = 12;
-const MAX_UNTRACKED_FILE_PREVIEW_BYTES = 4096;
+const GIT_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 
 export async function getGitApi(): Promise<GitAPI | undefined> {
   const extension = vscode.extensions.getExtension<GitExtension>("vscode.git");
@@ -68,39 +67,74 @@ export async function collectRepositoryChanges(
 ): Promise<ChangeSnapshot> {
   const status = await runGit(["status", "--short"], repositoryPath, config.commandTimeoutMs);
 
-  const diffParts: string[] = [];
-  const staged = await runGit(["diff", "--staged", "--no-color", "--no-ext-diff"], repositoryPath, config.commandTimeoutMs);
-  if (staged.trim()) {
-    diffParts.push("# Staged changes", staged);
-  }
+  const stagedFiles = parseLines(
+    await runGit(["diff", "--name-only", "--staged"], repositoryPath, config.commandTimeoutMs)
+  );
+  const unstagedFiles = config.includeOnlyStaged
+    ? []
+    : parseLines(await runGit(["diff", "--name-only"], repositoryPath, config.commandTimeoutMs));
+  const untrackedFiles = config.includeOnlyStaged
+    ? []
+    : parseLines(
+        await runGit(["ls-files", "--others", "--exclude-standard"], repositoryPath, config.commandTimeoutMs)
+      );
 
-  if (!config.includeOnlyStaged) {
-    const unstaged = await runGit(["diff", "--no-color", "--no-ext-diff"], repositoryPath, config.commandTimeoutMs);
-    if (unstaged.trim()) {
-      diffParts.push("# Unstaged changes", unstaged);
+  const allChangedFiles = uniqueLines([...stagedFiles, ...unstagedFiles, ...untrackedFiles]);
+  const limitedFiles = allChangedFiles.slice(0, config.maxChangedFiles);
+  const wasFileLimited = allChangedFiles.length > limitedFiles.length;
+
+  const stagedSet = new Set(stagedFiles);
+  const unstagedSet = new Set(unstagedFiles);
+  const untrackedSet = new Set(untrackedFiles);
+
+  const diffParts: string[] = [];
+  for (const filePath of limitedFiles) {
+    const sections: string[] = [];
+
+    if (stagedSet.has(filePath)) {
+      const stagedDiff = await runGit(
+        ["diff", "--staged", "--no-color", "--no-ext-diff", "--", filePath],
+        repositoryPath,
+        config.commandTimeoutMs
+      );
+      if (stagedDiff.trim()) {
+        sections.push(`# Staged diff\n${stagedDiff}`);
+      }
     }
 
-    const untrackedRaw = await runGit(
-      ["ls-files", "--others", "--exclude-standard"],
-      repositoryPath,
-      config.commandTimeoutMs
-    );
-    const untrackedFiles = parseLines(untrackedRaw);
-    if (untrackedFiles.length > 0) {
-      const untrackedPreview = await buildUntrackedFilePreview(untrackedFiles, repositoryPath);
-      if (untrackedPreview.trim()) {
-        diffParts.push("# Untracked file previews", untrackedPreview);
+    if (unstagedSet.has(filePath)) {
+      const unstagedDiff = await runGit(
+        ["diff", "--no-color", "--no-ext-diff", "--", filePath],
+        repositoryPath,
+        config.commandTimeoutMs
+      );
+      if (unstagedDiff.trim()) {
+        sections.push(`# Unstaged diff\n${unstagedDiff}`);
       }
+    }
+
+    if (untrackedSet.has(filePath)) {
+      const untrackedContent = await readUntrackedFileContent(join(repositoryPath, filePath));
+      if (untrackedContent.trim()) {
+        sections.push(`# Untracked file content\n${untrackedContent}`);
+      }
+    }
+
+    if (sections.length > 0) {
+      diffParts.push(`## ${filePath}\n${sections.join("\n\n")}`);
     }
   }
 
   const merged = diffParts.join("\n\n");
-  const trimmed = trimUtf8(merged, config.maxDiffBytes);
+  const trimmed = config.truncateDiff ? trimUtf8(merged, config.maxDiffBytes) : { text: merged, truncated: false };
 
   return {
     status,
     diff: trimmed.text,
-    wasTruncated: trimmed.truncated
+    wasTruncated: trimmed.truncated,
+    wasFileLimited,
+    totalChangedFiles: allChangedFiles.length,
+    includedChangedFiles: limitedFiles.length
   };
 }
 
@@ -113,7 +147,7 @@ function runGit(args: string[], cwd: string, timeoutMs: number): Promise<string>
         cwd,
         timeout: timeoutMs,
         windowsHide: true,
-        maxBuffer: 8 * 1024 * 1024
+        maxBuffer: GIT_MAX_BUFFER_BYTES
       },
       (error, stdout, stderr) => {
         if (error) {
@@ -134,63 +168,39 @@ function parseLines(value: string): string[] {
     .filter((line) => line.length > 0);
 }
 
-async function buildUntrackedFilePreview(filePaths: string[], repositoryPath: string): Promise<string> {
-  const sections: string[] = [];
-  const limited = filePaths.slice(0, MAX_UNTRACKED_FILES);
+function uniqueLines(lines: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
 
-  for (const relativePath of limited) {
-    const absolutePath = join(repositoryPath, relativePath);
-
-    try {
-      const preview = await readTextPreview(absolutePath);
-      sections.push(`## ${relativePath}\n${preview}`);
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      sections.push(`## ${relativePath}\n[Preview unavailable: ${reason}]`);
+  for (const line of lines) {
+    if (seen.has(line)) {
+      continue;
     }
+    seen.add(line);
+    output.push(line);
   }
 
-  if (filePaths.length > limited.length) {
-    sections.push(
-      `[Only first ${limited.length} untracked files are included out of ${filePaths.length} total untracked files]`
-    );
-  }
-
-  return sections.join("\n\n");
+  return output;
 }
 
-async function readTextPreview(filePath: string): Promise<string> {
-  const stat = await fs.stat(filePath);
-  if (!stat.isFile()) {
-    return "[Skipped non-regular file]";
-  }
-
-  const bytesToRead = Math.min(Number(stat.size), MAX_UNTRACKED_FILE_PREVIEW_BYTES);
-  const fileHandle = await fs.open(filePath, "r");
-  const buffer = Buffer.alloc(bytesToRead);
-
+async function readUntrackedFileContent(filePath: string): Promise<string> {
   try {
-    if (bytesToRead > 0) {
-      await fileHandle.read(buffer, 0, bytesToRead, 0);
+    const stat = await fs.stat(filePath);
+    if (!stat.isFile()) {
+      return "[Skipped non-regular file]";
     }
-  } finally {
-    await fileHandle.close();
-  }
 
-  if (looksBinary(buffer)) {
-    return "[Skipped binary file]";
-  }
+    const buffer = await fs.readFile(filePath);
+    if (looksBinary(buffer)) {
+      return "[Skipped binary file]";
+    }
 
-  const text = buffer.toString("utf8").trim();
-  if (!text) {
-    return "[Empty text file]";
+    const text = buffer.toString("utf8");
+    return text.trim() || "[Empty text file]";
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return `[Untracked file unavailable: ${reason}]`;
   }
-
-  if (Number(stat.size) > bytesToRead) {
-    return `${text}\n[File preview truncated]`;
-  }
-
-  return text;
 }
 
 function looksBinary(buffer: Buffer): boolean {

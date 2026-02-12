@@ -2,7 +2,7 @@
   "name": "gitgathom",
   "displayName": "GitFathom",
   "description": "Generate git commit messages from repository changes with configurable AI providers.",
-  "version": "0.3.7",
+  "version": "0.4.7",
   "publisher": "slocean",
   "license": "UNLICENSED",
   "repository": {
@@ -140,12 +140,15 @@
           "markdownDescription": "生成采样温度。"
         },
         "gitgathom.maxTokens": {
-          "type": "number",
-          "default": 120,
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null,
           "minimum": 16,
           "maximum": 2048,
           "title": "最大输出 Token",
-          "markdownDescription": "输出的最大 Token 数。"
+          "markdownDescription": "输出的最大 Token 数。设为 null 表示不限制（由厂商默认控制）。"
         },
         "gitgathom.requestTimeoutMs": {
           "type": "number",
@@ -169,13 +172,27 @@
           "title": "仅包含暂存区",
           "markdownDescription": "开启后仅包含暂存区变更。"
         },
+        "gitgathom.maxChangedFiles": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 500,
+          "title": "最大变更文件数",
+          "markdownDescription": "发送给 AI 的最大变更文件数量。"
+        },
+        "gitgathom.truncateDiff": {
+          "type": "boolean",
+          "default": true,
+          "title": "启用 Diff 截断",
+          "markdownDescription": "是否对总 diff 内容按字节截断。关闭后不截断。"
+        },
         "gitgathom.maxDiffBytes": {
           "type": "number",
           "default": 120000,
           "minimum": 4096,
           "maximum": 2097152,
           "title": "Diff 最大字节数",
-          "markdownDescription": "发送给模型的 diff UTF-8 最大字节数。"
+          "markdownDescription": "发送给模型的 diff UTF-8 最大字节数（仅在启用 Diff 截断时生效）。"
         },
         "gitgathom.systemPrompt": {
           "type": "string",

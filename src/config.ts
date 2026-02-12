@@ -27,6 +27,57 @@ const PROVIDER_ENV_KEYS: Record<Provider, string> = {
   custom: 'GITFATHOM_API_KEY'
 };
 
+const TRANSLATED_EN_RULE_TEMPLATE = `
+        # Git Commit Message Style Guide
+        Commit messages must follow Conventional Commits and include gitmoji.
+
+        ## 1. Format Requirements
+        <gitmoji> <type>(<scope>): <subject>
+        <body>
+        <footer>
+
+        ## 2\. Field Details
+        ### 📌 gitmoji (required)
+        Add an appropriate gitmoji based on commit type. For example:
+          - ✨ 'feat'
+          - 🐛 'fix'
+          - 📝 'docs'
+          - 🎨 'style'
+          - ♻️ 'refactor'
+          - ✅ 'test'
+          - 🔧 'chore'
+
+        ### 📌 type (required)
+
+        Must be one of the following types:
+          - 'feat': New feature
+          - 'fix': Bug fix
+          - 'docs': Documentation changes
+          - 'style': Code formatting changes (no logic impact)
+          - 'refactor': Refactoring (neither bug fixing nor feature adding)
+          - 'test': Test code
+          - 'chore': Build/dependency changes
+
+        ### 📌 scope (required)
+        Affected scope; describe which specific module this change impacts.
+
+        ### 📌 subject (required)
+          - **Language**: Use English.
+          - **Tense**: Use past tense verbs (e.g. fixed, added).
+          - **Limit**: Within 100 characters, detailed but focused.
+
+        ### 📌 body (required)
+        Explain the concrete changes and rationale in detail; line breaks are allowed.
+
+        ### 📌 footer (required)
+        Link related issue (e.g. 'Closes #123') or mark 'BREAKING CHANGE'.
+
+        ## 3\. Example
+        ✨ feat(auth): added oauth2 login support
+                        - integrated Google OAuth2
+                        - added login page UI components
+`;
+
 const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
   zh: {
     system: `你是一个资深软件工程师，擅长编写高质量 Git Commit Message。`,
@@ -79,34 +130,7 @@ const DEFAULT_PROMPTS: Record<UiLanguage, { system: string; rule: string }> = {
   },
   en: {
     system: `You are a senior software engineer skilled at writing high-quality Git commit messages.`,
-    rule: `
-        Based on the "code change description", output exactly one commit line:
-
-        [Format]
-        <type>(optional-scope): <subject> <emoji>
-
-        [Rules]
-        - Follow Conventional Commits
-        - Subject must be non-empty and meaningful
-        - Subject must contain action + concrete object/module, avoid generic words like "update" or "changes"
-        - Prefer including a file/module/feature keyword in scope or subject
-        - Emoji only at the end of subject and must match the type
-        - Language: English
-        - No extra explanations
-        - Max length: 72 characters
-
-        [Allowed Types]
-        - feat ✨ New feature
-        - fix 🐛 Bug fix
-        - refactor ♻️ Code refactoring
-        - perf ⚡ Performance improvement
-        - docs 📝 Documentation
-        - style 💄 Code style/formatting
-        - test ✅ Tests
-        - chore 🔧 Build/tools/maintenance
-        - ci 👷 CI/CD
-        - revert ⏪ Revert
-    `
+    rule: TRANSLATED_EN_RULE_TEMPLATE
   }
 };
 
@@ -128,10 +152,12 @@ export function readConfig(): ExtensionConfig {
     customRequestPath: ensureLeadingSlash(getConfigValue<string>(cfg, 'customRequestPath', '/chat/completions')),
     extraHeaders: parseHeaders(getConfigValue<string>(cfg, 'extraHeaders', '{}')),
     temperature: clamp(getConfigValue<number>(cfg, 'temperature', 0.2), 0, 2),
-    maxTokens: Math.max(16, Math.floor(getConfigValue<number>(cfg, 'maxTokens', 120))),
+    maxTokens: parseOptionalMaxTokens(getConfigValue<number | null>(cfg, 'maxTokens', null)),
     requestTimeoutMs: Math.max(3000, Math.floor(getConfigValue<number>(cfg, 'requestTimeoutMs', 25000))),
     commandTimeoutMs: Math.max(3000, Math.floor(getConfigValue<number>(cfg, 'commandTimeoutMs', 12000))),
     includeOnlyStaged: getConfigValue<boolean>(cfg, 'includeOnlyStaged', false),
+    maxChangedFiles: Math.max(1, Math.floor(getConfigValue<number>(cfg, 'maxChangedFiles', 30))),
+    truncateDiff: getConfigValue<boolean>(cfg, 'truncateDiff', true),
     maxDiffBytes: Math.max(4096, Math.floor(getConfigValue<number>(cfg, 'maxDiffBytes', 120000))),
     systemPrompt: rawSystemPrompt || DEFAULT_PROMPTS[language].system,
     ruleTemplate: rawRuleTemplate || DEFAULT_PROMPTS[language].rule,
@@ -166,16 +192,33 @@ function getConfigValue<T>(cfg: vscode.WorkspaceConfiguration, key: string, fall
   if (!inspected) {
     return fallback;
   }
-  if (inspected.globalValue !== undefined) {
-    return inspected.globalValue;
-  }
   if (inspected.workspaceFolderValue !== undefined) {
     return inspected.workspaceFolderValue;
   }
   if (inspected.workspaceValue !== undefined) {
     return inspected.workspaceValue;
   }
+  if (inspected.globalValue !== undefined) {
+    return inspected.globalValue;
+  }
   return inspected.defaultValue ?? fallback;
+}
+
+function parseOptionalMaxTokens(value: number | null): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+
+  const normalized = Math.floor(value);
+  if (normalized <= 0) {
+    return null;
+  }
+
+  return Math.max(16, normalized);
 }
 
 function resolveApiKey(provider: Provider, configuredKey: string): string {

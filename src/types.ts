@@ -10,10 +10,12 @@ export interface ExtensionConfig {
   customRequestPath: string;
   extraHeaders: Record<string, string>;
   temperature: number;
-  maxTokens: number;
+  maxTokens: number | null;
   requestTimeoutMs: number;
   commandTimeoutMs: number;
   includeOnlyStaged: boolean;
+  maxChangedFiles: number;
+  truncateDiff: boolean;
   maxDiffBytes: number;
   systemPrompt: string;
   ruleTemplate: string;
@@ -26,6 +28,9 @@ export interface ChangeSnapshot {
   status: string;
   diff: string;
   wasTruncated: boolean;
+  wasFileLimited: boolean;
+  totalChangedFiles: number;
+  includedChangedFiles: number;
 }
 
 export interface PromptPayload {

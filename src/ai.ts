@@ -102,9 +102,12 @@ async function requestOpenAiCompatible(
       { role: 'system', content: prompt.systemPrompt },
       { role: 'user', content: prompt.userPrompt }
     ],
-    temperature: config.temperature,
-    max_tokens: config.maxTokens
+    temperature: config.temperature
   };
+
+  if (typeof config.maxTokens === 'number') {
+    body.max_tokens = config.maxTokens;
+  }
 
   const debug = createDebugSnapshot(config.provider, config.model, endpoint, headers, body);
 
@@ -172,6 +175,14 @@ async function requestGemini(
     ...config.extraHeaders
   };
 
+  const generationConfig: Record<string, unknown> = {
+    temperature: config.temperature
+  };
+
+  if (typeof config.maxTokens === 'number') {
+    generationConfig.maxOutputTokens = config.maxTokens;
+  }
+
   const body: Record<string, unknown> = {
     contents: [
       {
@@ -179,10 +190,7 @@ async function requestGemini(
         parts: [{ text: mergedPrompt }]
       }
     ],
-    generationConfig: {
-      temperature: config.temperature,
-      maxOutputTokens: config.maxTokens
-    }
+    generationConfig
   };
 
   const debug = createDebugSnapshot(config.provider, config.model, endpoint, headers, body);
@@ -296,12 +304,20 @@ function sanitizeCommitText(raw: string): string {
     throw new Error('Generated commit message is empty.');
   }
 
+  const normalizedLines: string[] = [];
+  const seen = new Set<string>();
+
   for (const candidate of candidates) {
     const normalized = normalizeCommitLine(candidate);
     const localized = normalizeLocalizedType(normalized);
-    if (isValidCommitLine(localized)) {
-      return localized;
+    if (isValidCommitLine(localized) && !seen.has(localized)) {
+      seen.add(localized);
+      normalizedLines.push(localized);
     }
+  }
+
+  if (normalizedLines.length > 0) {
+    return normalizedLines.join('\n');
   }
 
   const fallback = buildFallbackCommitLine(candidates);
