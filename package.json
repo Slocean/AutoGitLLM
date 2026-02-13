@@ -131,6 +131,64 @@
           "title": "额外请求头",
           "markdownDescription": "额外 HTTP 请求头的 JSON，例如 {\"X-Api-Key\":\"...\"}。"
         },
+        "gitgathom.detailedOutput": {
+          "type": "boolean",
+          "default": true,
+          "title": "详细输出",
+          "markdownDescription": "开启后使用详细输出规则；关闭后每条改动只输出一句话概括。"
+        },
+        "gitgathom.ruleTemplate": {
+          "type": "string",
+          "default": "",
+          "title": "规则模板",
+          "markdownDescription": "提交信息生成的主规则模板，留空则使用内置默认值。"
+        },
+        "gitgathom.additionalRules": {
+          "type": "string",
+          "default": "",
+          "title": "附加规则",
+          "markdownDescription": "附加到规则模板后的额外指令。"
+        },
+        "gitgathom.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "title": "系统提示词",
+          "markdownDescription": "控制生成风格的系统提示词，留空则使用内置默认值。"
+        },
+        "gitgathom.copyToClipboard": {
+          "type": "boolean",
+          "default": false,
+          "title": "复制到剪贴板",
+          "markdownDescription": "生成后同时复制到剪贴板。"
+        },
+        "gitgathom.includeOnlyStaged": {
+          "type": "boolean",
+          "default": false,
+          "title": "仅包含暂存区",
+          "markdownDescription": "开启后仅包含暂存区变更。"
+        },
+        "gitgathom.maxChangedFiles": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 500,
+          "title": "最大变更文件数",
+          "markdownDescription": "发送给 AI 的最大变更文件数量。"
+        },
+        "gitgathom.truncateDiff": {
+          "type": "boolean",
+          "default": true,
+          "title": "启用 Diff 截断",
+          "markdownDescription": "是否对总 diff 内容按字节截断。关闭后不截断。"
+        },
+        "gitgathom.maxDiffBytes": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 4096,
+          "maximum": 2097152,
+          "title": "Diff 最大字节数",
+          "markdownDescription": "发送给模型的 diff UTF-8 最大字节数（仅在启用 Diff 截断时生效）。"
+        },
         "gitgathom.temperature": {
           "type": "number",
           "default": 0.2,
@@ -165,64 +223,6 @@
           "maximum": 120000,
           "title": "命令超时（毫秒）",
           "markdownDescription": "Git 命令超时（毫秒）。"
-        },
-        "gitgathom.includeOnlyStaged": {
-          "type": "boolean",
-          "default": false,
-          "title": "仅包含暂存区",
-          "markdownDescription": "开启后仅包含暂存区变更。"
-        },
-        "gitgathom.maxChangedFiles": {
-          "type": "number",
-          "default": 30,
-          "minimum": 1,
-          "maximum": 500,
-          "title": "最大变更文件数",
-          "markdownDescription": "发送给 AI 的最大变更文件数量。"
-        },
-        "gitgathom.truncateDiff": {
-          "type": "boolean",
-          "default": true,
-          "title": "启用 Diff 截断",
-          "markdownDescription": "是否对总 diff 内容按字节截断。关闭后不截断。"
-        },
-        "gitgathom.maxDiffBytes": {
-          "type": "number",
-          "default": 120000,
-          "minimum": 4096,
-          "maximum": 2097152,
-          "title": "Diff 最大字节数",
-          "markdownDescription": "发送给模型的 diff UTF-8 最大字节数（仅在启用 Diff 截断时生效）。"
-        },
-        "gitgathom.systemPrompt": {
-          "type": "string",
-          "default": "",
-          "title": "系统提示词",
-          "markdownDescription": "控制生成风格的系统提示词，留空则使用内置默认值。"
-        },
-        "gitgathom.ruleTemplate": {
-          "type": "string",
-          "default": "",
-          "title": "规则模板",
-          "markdownDescription": "提交信息生成的主规则模板，留空则使用内置默认值。"
-        },
-        "gitgathom.additionalRules": {
-          "type": "string",
-          "default": "",
-          "title": "附加规则",
-          "markdownDescription": "附加到规则模板后的额外指令。"
-        },
-        "gitgathom.detailedOutput": {
-          "type": "boolean",
-          "default": true,
-          "title": "详细输出",
-          "markdownDescription": "开启后使用详细输出规则；关闭后每条改动只输出一句话概括。"
-        },
-        "gitgathom.copyToClipboard": {
-          "type": "boolean",
-          "default": false,
-          "title": "复制到剪贴板",
-          "markdownDescription": "生成后同时复制到剪贴板。"
         },
         "gitgathom.debugView": {
           "type": "boolean",
