@@ -22,7 +22,7 @@
     "onCommand:gitgathom.showLastDebugReport"
   ],
   "main": "./dist/extension.js",
-  "icon": "src/img/icon.png",
+  "icon": "src/img/logo.png",
   "contributes": {
     "commands": [
       {
@@ -30,8 +30,8 @@
         "title": "AI 生成提交信息 / Generate Commit Message",
         "category": "GitFathom",
         "icon": {
-          "light": "src/img/dark-btn.png",
-          "dark": "src/img/light_btn.png"
+          "light": "src/img/btn_light.png",
+          "dark": "src/img/btn_dark.png"
         }
       },
       {
