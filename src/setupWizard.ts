@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getDefaultModel } from './config';
+import { getDefaultModel, getSuggestedModels } from './config';
 import { providerLabel, t } from './i18n';
 import { Provider, UiLanguage } from './types';
 
@@ -24,12 +24,7 @@ export async function openSetupWizard(currentLanguage: UiLanguage): Promise<bool
   await updateSetting('provider', provider);
 
   const currentModel = cfg.get<string>('model', '').trim();
-  const model = await vscode.window.showInputBox({
-    prompt: t(language, 'wizardModelPrompt'),
-    placeHolder: t(language, 'wizardModelPlaceholder'),
-    value: currentModel || getDefaultModel(provider),
-    validateInput: value => (value.trim() ? undefined : t(language, 'wizardModelPrompt'))
-  });
+  const model = await pickModel(language, provider, currentProvider, currentModel);
   if (model === undefined) {
     return false;
   }
@@ -182,4 +177,107 @@ function normalizeRequestPath(value: string): string {
     return '';
   }
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+async function pickModel(
+  language: UiLanguage,
+  provider: Provider,
+  currentProvider: Provider,
+  currentModel: string
+): Promise<string | undefined> {
+  const defaultModel = getDefaultModel(provider);
+  const initialModel = provider === currentProvider && currentModel ? currentModel : defaultModel;
+  const suggestedModels = getSuggestedModels(provider);
+
+  // If we don't have suggestions (e.g. custom provider), fallback to free-form input.
+  if (suggestedModels.length === 0) {
+    const value = await vscode.window.showInputBox({
+      prompt: t(language, 'wizardModelPrompt'),
+      placeHolder: t(language, 'wizardModelPlaceholder'),
+      value: initialModel,
+      validateInput: input => (input.trim() ? undefined : t(language, 'wizardModelPrompt'))
+    });
+
+    return value === undefined ? undefined : value.trim();
+  }
+
+  const latestHint = language === 'zh' ? '默认(最新)' : 'Default (latest)';
+  const customLabel = language === 'zh' ? '自定义输入…' : 'Custom input…';
+  const customDetail = language === 'zh' ? '手动输入任意模型名' : 'Type any model name';
+
+  const items: vscode.QuickPickItem[] = [
+    ...suggestedModels.map(model => ({
+      label: model,
+      description: model === defaultModel ? latestHint : ''
+    })),
+    { label: customLabel, detail: customDetail }
+  ];
+
+  const quickPick = vscode.window.createQuickPick<vscode.QuickPickItem>();
+  quickPick.items = items;
+  quickPick.ignoreFocusOut = true;
+  quickPick.matchOnDescription = true;
+  quickPick.placeholder = t(language, 'wizardModelPlaceholder');
+  quickPick.value = initialModel;
+
+  const initialItem =
+    items.find(item => item.label === initialModel) ?? items.find(item => item.label === defaultModel);
+  if (initialItem) {
+    quickPick.activeItems = [initialItem];
+  }
+
+  return await new Promise(resolve => {
+    let settled = false;
+
+    const finish = (value: string | undefined) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      quickPick.dispose();
+      resolve(value);
+    };
+
+    const accept = async () => {
+      const picked = quickPick.selectedItems[0] ?? quickPick.activeItems[0];
+
+      if (picked?.label === customLabel) {
+        quickPick.hide();
+        const value = await vscode.window.showInputBox({
+          prompt: t(language, 'wizardModelPrompt'),
+          placeHolder: t(language, 'wizardModelPlaceholder'),
+          value: initialModel,
+          validateInput: input => (input.trim() ? undefined : t(language, 'wizardModelPrompt'))
+        });
+        finish(value === undefined ? undefined : value.trim());
+        return;
+      }
+
+      if (picked?.label) {
+        quickPick.hide();
+        finish(picked.label.trim());
+        return;
+      }
+
+      const typed = quickPick.value.trim();
+      if (typed) {
+        quickPick.hide();
+        finish(typed);
+        return;
+      }
+
+      void vscode.window.showErrorMessage(
+        language === 'zh' ? '模型名称不能为空。' : 'Model name cannot be empty.'
+      );
+    };
+
+    const hide = () => finish(undefined);
+
+    quickPick.onDidAccept(() => {
+      void accept();
+    });
+    quickPick.onDidHide(hide);
+
+    quickPick.show();
+  });
 }

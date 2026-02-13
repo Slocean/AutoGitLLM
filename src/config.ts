@@ -18,6 +18,15 @@ const DEFAULT_MODELS: Record<Provider, string> = {
   custom: 'gpt-4o-mini'
 };
 
+const SUGGESTED_MODELS: Record<Provider, string[]> = {
+  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1'],
+  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+  gemini: ['gemini-2.0-flash', 'gemini-2.0-pro', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+  kimi: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'],
+  glm: ['glm-4-flash', 'glm-4-air', 'glm-4', 'glm-4-plus'],
+  custom: []
+};
+
 const PROVIDER_ENV_KEYS: Record<Provider, string> = {
   openai: 'OPENAI_API_KEY',
   deepseek: 'DEEPSEEK_API_KEY',
@@ -181,6 +190,30 @@ export function resolveBaseUrl(config: ExtensionConfig): string {
 
 export function getDefaultModel(provider: Provider): string {
   return DEFAULT_MODELS[provider];
+}
+
+export function getSuggestedModels(provider: Provider): string[] {
+  const models = SUGGESTED_MODELS[provider] ?? [];
+  if (models.length === 0) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+  for (const model of models) {
+    const normalized = model.trim();
+    if (normalized) {
+      unique.add(normalized);
+    }
+  }
+
+  // Keep the default model at the top if present.
+  const defaultModel = DEFAULT_MODELS[provider];
+  if (defaultModel && unique.has(defaultModel)) {
+    unique.delete(defaultModel);
+    return [defaultModel, ...unique];
+  }
+
+  return [...unique];
 }
 
 export function normalizeLanguage(value: string | undefined): UiLanguage {

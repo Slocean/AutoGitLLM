@@ -25,6 +25,8 @@
 
    ```bash
    npm run compile
+
+   vsce package
    ```
 
 3. 按 `F5` 启动扩展开发宿主

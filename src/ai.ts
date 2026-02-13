@@ -315,7 +315,7 @@ function sanitizeCommitText(raw: string): string {
 
   const firstHeaderIndex = normalizedCandidates.findIndex(isValidCommitLine);
   if (firstHeaderIndex >= 0) {
-    const header = normalizedCandidates[firstHeaderIndex];
+    const header = ensureGitmojiHeader(normalizedCandidates[firstHeaderIndex]);
     const bodyLines: string[] = [];
 
     for (let i = firstHeaderIndex + 1; i < normalizedCandidates.length; i += 1) {
@@ -330,12 +330,17 @@ function sanitizeCommitText(raw: string): string {
       }
     }
 
-    return bodyLines.length > 0 ? `${header}\n${bodyLines.join('\n')}` : header;
+    if (bodyLines.length === 0) {
+      return header;
+    }
+
+    const bulleted = bodyLines.map(line => `  - ${line}`);
+    return `${header}\n${bulleted.join('\n')}`;
   }
 
   const fallback = buildFallbackCommitLine(candidates);
   if (fallback && isValidCommitLine(fallback)) {
-    return fallback;
+    return ensureGitmojiHeader(fallback);
   }
 
   throw new Error('Generated commit message is invalid or missing subject.');
@@ -343,22 +348,38 @@ function sanitizeCommitText(raw: string): string {
 
 function normalizeBodyLine(value: string): string {
   return value
-    .replace(/^[-*]\s+/, '')
+    .replace(/^[•*-]\s+/, '')
     .replace(/^\d+[.)]\s+/, '')
     .replace(/^['"`]+|['"`]+$/g, '')
     .trim();
 }
 
 function normalizeCommitLine(value: string): string {
-  const embedded = value.match(/\b([a-zA-Z]+(?:\([^)]+\))?!?\s*[:\uFF1A]\s*.+)$/u)?.[1] ?? value;
-  const strippedBullet = embedded.replace(/^[-*]\s+/, '').replace(/^\d+[.)]\s+/, '').trim();
-  const normalizedColon = strippedBullet.replace(/\uFF1A/g, ':');
-  const collapsedPrefix = normalizedColon.replace(
-    /^([a-zA-Z]+(?:\([^)]+\))?!?)\s*:\s*/,
-    '$1: '
-  );
+  const stripped = value
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+[.)]\s+/, '')
+    .replace(/^['"`]+|['"`]+$/g, '')
+    .trim()
+    .replace(/\uFF1A/g, ':');
 
-  return collapsedPrefix.trim();
+  const embedded =
+    stripped.match(/(\S+\s+)?[a-zA-Z]+(?:\([^)]+\))?!?\s*:\s*.+$/u)?.[0]?.trim() ?? stripped;
+
+  const parsed = parseCommitHeader(embedded);
+  if (!parsed) {
+    return embedded;
+  }
+
+  const subject = parsed.subject.trim();
+  if (!subject) {
+    return '';
+  }
+
+  if (parsed.gitmoji) {
+    return `${parsed.gitmoji} ${parsed.typeScope}: ${subject}`.trim();
+  }
+
+  return `${parsed.typeScope}: ${subject}`.trim();
 }
 
 function extractCandidates(raw: string): string[] {
@@ -458,7 +479,9 @@ function buildFallbackCommitLine(candidates: string[]): string | undefined {
     return undefined;
   }
 
-  return `${inferType(subject)}: ${subject}`;
+  const type = inferType(subject);
+  const gitmoji = gitmojiForType(type);
+  return `${gitmoji} ${type}: ${subject}`;
 }
 
 function inferType(subject: string): string {
@@ -490,17 +513,79 @@ function inferType(subject: string): string {
 }
 
 function isValidCommitLine(value: string): boolean {
-  const match = value.match(/^([a-zA-Z]+(?:\([^)]+\))?!?):\s*(.+)$/);
-  if (!match) {
+  const parsed = parseCommitHeader(value);
+  if (!parsed) {
     return false;
   }
 
-  const subject = match[2].trim();
+  const subject = parsed.subject.trim();
   if (!subject) {
     return false;
   }
 
   return /[\p{L}\p{N}]/u.test(subject);
+}
+
+type ParsedCommitHeader = {
+  gitmoji?: string;
+  typeScope: string;
+  subject: string;
+};
+
+const GITMOJI_BY_TYPE: Record<string, string> = {
+  feat: '✨',
+  fix: '🐛',
+  docs: '📝',
+  style: '💄',
+  refactor: '♻️',
+  perf: '⚡️',
+  test: '✅',
+  chore: '🔧',
+  build: '🏗️',
+  ci: '👷',
+  revert: '⏪'
+};
+
+function parseCommitHeader(value: string): ParsedCommitHeader | null {
+  const normalized = value.trim().replace(/\uFF1A/g, ':');
+
+  const withGitmoji = normalized.match(
+    /^(\S+)\s+([a-zA-Z]+(?:\([^)]+\))?!?):\s*(.+)$/u
+  );
+  if (withGitmoji) {
+    return {
+      gitmoji: withGitmoji[1],
+      typeScope: withGitmoji[2],
+      subject: withGitmoji[3].trim()
+    };
+  }
+
+  const withoutGitmoji = normalized.match(/^([a-zA-Z]+(?:\([^)]+\))?!?):\s*(.+)$/u);
+  if (withoutGitmoji) {
+    return {
+      typeScope: withoutGitmoji[1],
+      subject: withoutGitmoji[2].trim()
+    };
+  }
+
+  return null;
+}
+
+function ensureGitmojiHeader(value: string): string {
+  const parsed = parseCommitHeader(value);
+  if (!parsed) {
+    return value.trim();
+  }
+
+  const subject = parsed.subject.trim();
+  const type = parsed.typeScope.replace(/!$/, '').split('(')[0].toLowerCase();
+  const gitmoji = parsed.gitmoji?.trim() || gitmojiForType(type);
+
+  return `${gitmoji} ${parsed.typeScope}: ${subject}`.trim();
+}
+
+function gitmojiForType(type: string): string {
+  return GITMOJI_BY_TYPE[type] ?? '🔧';
 }
 
 function hasHeader(headers: Record<string, string>, keyToFind: string): boolean {
